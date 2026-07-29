@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1e1e2f, #2d2d44);
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+
+  .calculator {
+    background: #23233a;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    width: 320px;
+  }
+
+  .display {
+    background: #16161f;
+    border-radius: 12px;
+    padding: 20px 15px;
+    margin-bottom: 15px;
+    text-align: right;
+    overflow: hidden;
+  }
+
+  .display .previous {
+    color: #8888a0;
+    font-size: 1rem;
+    min-height: 1.2rem;
+    word-wrap: break-word;
+  }
+
+  .display .current {
+    color: #ffffff;
+    font-size: 2.2rem;
+    font-weight: 500;
+    min-height: 2.4rem;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  button {
+    border: none;
+    outline: none;
+    border-radius: 12px;
+    font-size: 1.3rem;
+    padding: 18px 0;
+    cursor: pointer;
+    background: #33334d;
+    color: #ffffff;
+    transition: transform 0.08s ease, background 0.2s ease;
+  }
+
+  button:hover {
+    background: #40405e;
+  }
+
+  button:active {
+    transform: scale(0.95);
+  }
+
+  .operator {
+    background: #ff9500;
+    color: #ffffff;
+  }
+
+  .operator:hover {
+    background: #ffab33;
+  }
+
+  .equals {
+    background: #17a672;
+    grid-column: span 2;
+  }
+
+  .equals:hover {
+    background: #1fc989;
+  }
+
+  .clear, .delete {
+    background: #5a5a72;
+  }
+
+  .zero {
+    grid-column: span 2;
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="display">
+    <div class="previous" id="previous-operand"></div>
+    <div class="current" id="current-operand">0</div>
+  </div>
+  <div class="buttons">
+    <button class="clear" data-action="clear">AC</button>
+    <button class="delete" data-action="delete">DEL</button>
+    <button class="operator" data-action="operator" data-operator="%">%</button>
+    <button class="operator" data-action="operator" data-operator="÷">÷</button>
+
+    <button data-action="number">7</button>
+    <button data-action="number">8</button>
+    <button data-action="number">9</button>
+    <button class="operator" data-action="operator" data-operator="×">×</button>
+
+    <button data-action="number">4</button>
+    <button data-action="number">5</button>
+    <button data-action="number">6</button>
+    <button class="operator" data-action="operator" data-operator="−">−</button>
+
+    <button data-action="number">1</button>
+    <button data-action="number">2</button>
+    <button data-action="number">3</button>
+    <button class="operator" data-action="operator" data-operator="+">+</button>
+
+    <button class="zero" data-action="number">0</button>
+    <button data-action="decimal">.</button>
+    <button class="equals" data-action="equals">=</button>
+  </div>
+</div>
+
+<script>
+  const previousOperandEl = document.getElementById('previous-operand');
+  const currentOperandEl = document.getElementById('current-operand');
+
+  let currentOperand = '0';
+  let previousOperand = '';
+  let operation = undefined;
+  let resetNext = false;
+
+  function updateDisplay() {
+    currentOperandEl.textContent = currentOperand;
+    previousOperandEl.textContent = operation
+      ? `${previousOperand} ${operation}`
+      : '';
+  }
+
+  function appendNumber(number) {
+    if (currentOperand === '0' || resetNext) {
+      currentOperand = '';
+      resetNext = false;
+    }
+    currentOperand += number;
+  }
+
+  function appendDecimal() {
+    if (resetNext) {
+      currentOperand = '0';
+      resetNext = false;
+    }
+    if (currentOperand.includes('.')) return;
+    if (currentOperand === '') currentOperand = '0';
+    currentOperand += '.';
+  }
+
+  function chooseOperation(op) {
+    if (currentOperand === '' && previousOperand === '') return;
+
+    if (previousOperand !== '' && !resetNext) {
+      compute();
+    }
+
+    operation = op;
+    previousOperand = currentOperand;
+    resetNext = true;
+  }
+
+  function compute() {
+    let result;
+    const prev = parseFloat(previousOperand);
+    const current = parseFloat(currentOperand);
+
+    if (isNaN(prev) || isNaN(current)) return;
+
+    switch (operation) {
+      case '+':
+        result = prev + current;
+        break;
+      case '−':
+        result = prev - current;
+        break;
+      case '×':
+        result = prev * current;
+        break;
+      case '÷':
+        result = current === 0 ? 'Error' : prev / current;
+        break;
+      case '%':
+        result = prev % current;
+        break;
+      default:
+        return;
+    }
+
+    currentOperand = result === 'Error' ? 'Error' : trimResult(result);
+    operation = undefined;
+    previousOperand = '';
+    resetNext = true;
+  }
+
+  function trimResult(value) {
+    // Avoid floating point noise and overly long numbers
+    return parseFloat(value.toFixed(10)).toString();
+  }
+
+  function clearAll() {
+    currentOperand = '0';
+    previousOperand = '';
+    operation = undefined;
+    resetNext = false;
+  }
+
+  function deleteLast() {
+    if (resetNext) return;
+    currentOperand = currentOperand.slice(0, -1);
+    if (currentOperand === '' || currentOperand === '-') {
+      currentOperand = '0';
+    }
+  }
+
+  document.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.action;
+
+      switch (action) {
+        case 'number':
+          appendNumber(button.textContent);
+          break;
+        case 'decimal':
+          appendDecimal();
+          break;
+        case 'operator':
+          chooseOperation(button.dataset.operator);
+          break;
+        case 'equals':
+          if (operation !== undefined) compute();
+          break;
+        case 'clear':
+          clearAll();
+          break;
+        case 'delete':
+          deleteLast();
+          break;
+      }
+
+      updateDisplay();
+    });
+  });
+
+  // Optional: keyboard support
+  document.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
+    else if (e.key === '.') appendDecimal();
+    else if (e.key === '+') chooseOperation('+');
+    else if (e.key === '-') chooseOperation('−');
+    else if (e.key === '*') chooseOperation('×');
+    else if (e.key === '/') { e.preventDefault(); chooseOperation('÷'); }
+    else if (e.key === 'Enter' || e.key === '=') { if (operation !== undefined) compute(); }
+    else if (e.key === 'Backspace') deleteLast();
+    else if (e.key === 'Escape') clearAll();
+    else return;
+
+    updateDisplay();
+  });
+</script>
+
+</body>
+</html>
